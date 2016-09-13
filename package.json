@@ -1,0 +1,35 @@
+{
+  "name": "sparc2-core.js",
+  "version": "0.0.1",
+  "description": "Low-level Javascript API for SPARC 2.x",
+  "keywords": [
+    "map",
+    "mapping",
+    "geodash",
+    "sparc"
+  ],
+  "homepage": "https://github.com/wfp-ose/",
+  "scripts": {
+    "build:js": "browserify src/index.js --outfile dist/sparc2-core.js",
+    "uglify": "cat dist/sparc2-core.js | uglifyjs > dist/sparc2-core.min.js",
+    "build": "mkdir dist; npm run build:js && npm run uglify",
+    "jshint": "jshint src/*.js",
+    "tests": "npm run jshint"
+  },
+  "main": "dist/sparc2-core.min.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wfp-ose/sparc2-core.js"
+  },
+  "license": "TBD",
+  "author": "Patrick Dufour",
+  "bugs": {
+    "url": "https://github.com/wfp-ose/sparc2-core.js/issues"
+  },
+  "devDependencies": {
+    "browserify": "*",
+    "browserify-shim": "*",
+    "uglify-js": "*",
+    "jshint": "*"
+  }
+}
