@@ -57,8 +57,10 @@ module.exports = function(chartConfig, popatrisk_config, options)
     }
     axisConfig["y"]["label"] = chartConfig.axis.y.label;
     axisConfig["y"]["tick"] = {format: d3.format("s,")};
+
+    var chartID = (chartConfig.element || chartConfig.id);
     var chartActual = c3.generate({
-      bindto: "#"+ (chartConfig.element || chartConfig.id),
+      bindto: "#"+ chartID,
       data: {
         columns: gc.columns,
         groups: gc.groups,
@@ -69,5 +71,7 @@ module.exports = function(chartConfig, popatrisk_config, options)
       axis : axisConfig,
       bar: barConfig
     });
+
+    $("#"+ chartID).data('chart', chartActual);
   }
 };

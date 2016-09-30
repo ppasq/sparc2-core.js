@@ -12,15 +12,12 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
     codecs: codecs
   };
   var prefetch = geodash.bloodhound.prefetch(prefetchOptions);
-  var remoteOptions = {
-    url: url,
-    dataType: 'json',
-    codec: "Countries",
-    rate: 1000,
-    codecs: codecs
-  };
-  var remote = geodash.bloodhound.remote(remoteOptions);
-  var engine = geodash.bloodhound.engine(local, prefetch, remote);
+  var remote = undefined;
+  var engine = geodash.bloodhound.engine({
+    "local": local,
+    "prefetch": prefetch,
+    "remote": remote
+  });
   var templates = {
     suggestion: template_suggestion
   };

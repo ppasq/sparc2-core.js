@@ -443,8 +443,10 @@ module.exports = function(chartConfig, popatrisk_config, options)
     }
     axisConfig["y"]["label"] = chartConfig.axis.y.label;
     axisConfig["y"]["tick"] = {format: d3.format("s,")};
+
+    var chartID = (chartConfig.element || chartConfig.id);
     var chartActual = c3.generate({
-      bindto: "#"+ (chartConfig.element || chartConfig.id),
+      bindto: "#"+ chartID,
       data: {
         columns: gc.columns,
         groups: gc.groups,
@@ -455,6 +457,8 @@ module.exports = function(chartConfig, popatrisk_config, options)
       axis : axisConfig,
       bar: barConfig
     });
+
+    $("#"+ chartID).data('chart', chartActual);
   }
 };
 
@@ -470,46 +474,70 @@ module.exports = {
 },{"./buildGroupsAndColumnsForAdmin2":11,"./buildGroupsAndColumnsForCountry":12,"./buildHazardChart":13}],15:[function(require,module,exports){
 module.exports = function(f, state, map_config, options)
 {
-  var fl = geodash.api.getFeatureLayer("context");
+  var layerID = "context";
   var style = {};
-  var filters = state["filters"]["context"];
-  var currentStyleID = state["styles"]["context"];
-  var currentStyleList = $.grep(fl["cartography"], function(style, i){return style.id == currentStyleID;});
-  var currentStyle = (currentStyleList.length == 1) ? currentStyleList[0] : fl["cartography"][0];
   //
-  var colorize = true;
-  if("mask" in currentStyle)
+  var fl = geodash.api.getFeatureLayer(layerID);
+  var normalizedFeature = geodash.normalize.feature(f);
+  //
+  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+  var ldi = normalizedFeature.attributes.ldi;
+  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+  var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+  var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
+  //
+  if(
+    (ldi == undefined || ldi_range == undefined || (ldi >= ldi_range[0] && ldi <= ldi_range[1])) &&
+    (erosion_propensity == undefined || erosion_propensity_range == undefined || (erosion_propensity >= erosion_propensity_range[0] && erosion_propensity <= erosion_propensity_range[1])) &&
+    (landcover_delta_negative == undefined || landcover_delta_negative_range == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
+  )
   {
-    if(f.properties[currentStyle["mask"]] == 1)
+    var currentStyleID = state["styles"][layerID];
+    var currentStyleList = $.grep(fl["cartography"], function(style, i){return style.id == currentStyleID;});
+    var currentStyle = (currentStyleList.length == 1) ? currentStyleList[0] : fl["cartography"][0];
+    //
+    var colorize = true;
+    if("mask" in currentStyle)
     {
-      colorize = true;
-    }
-    else
-    {
-      style["fillColor"] = currentStyle["colors"]["outside"]
-      colorize = false;
-    }
-  }
-
-  if(colorize)
-  {
-    var value = f.properties[currentStyle["attribute"]];
-    var colors = currentStyle["colors"]["ramp"];
-    var breakPointsName = currentStyle["breakpoints"] || "natural_adjusted";
-    var breakpoints = geodash.initial_data.layers.context["data"]["summary"]["all"]["breakpoints"][breakPointsName];
-    var color = undefined;
-    for(var i = 0; i < breakpoints.length -1; i++)
-    {
-      if(
-        (value == breakpoints[i] && value == breakpoints[i+1]) ||
-        (value >= breakpoints[i] && value < breakpoints[i+1])
-      )
+      if(normalizedFeature.attributes[currentStyle["mask"]] == 1)
       {
-        color = colors[i];
-        break;
+        colorize = true;
+      }
+      else
+      {
+        style["fillColor"] = currentStyle["colors"]["outside"]
+        colorize = false;
       }
     }
-    style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+
+    if(colorize)
+    {
+      var value = normalizedFeature.attributes[currentStyle["attribute"]];
+      var colors = currentStyle["colors"]["ramp"];
+      var breakPointsName = currentStyle["breakpoints"] || "natural_adjusted";
+      var breakpoints = geodash.initial_data.layers[layerID]["data"]["summary"]["all"]["breakpoints"][breakPointsName];
+      var color = undefined;
+      for(var i = 0; i < breakpoints.length -1; i++)
+      {
+        if(
+          (value == breakpoints[i] && value == breakpoints[i+1]) ||
+          (value >= breakpoints[i] && value < breakpoints[i+1])
+        )
+        {
+          color = colors[i];
+          break;
+        }
+      }
+      style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+    }
+  }
+  else
+  {
+    style["opacity"] = 0;
+    style["fillOpacity"] = 0;
+    style["strokeOpacity"] = 0;
+    style["strokeColor"] = "rgba(0, 0, 0, 0)";
   }
 
   return style;
@@ -518,20 +546,23 @@ module.exports = function(f, state, map_config, options)
 },{}],16:[function(require,module,exports){
 module.exports = function(f, state, map_config, options)
 {
-  var fl = geodash.api.getFeatureLayer("popatrisk");
+  var layerID = "popatrisk";
   var style = {};
-  var filters = state["filters"]["popatrisk"];
-  var popatrisk_range = filters["popatrisk_range"];
-  var ldi_range = filters["ldi_range"];
-  var ldi = f.properties.ldi;
-  var erosion_propensity_range = filters["erosion_propensity_range"];
-  var erosion_propensity = f.properties.erosion_propensity;
-  var landcover_delta_negative_range = filters["landcover_delta_negative_range"];
-  var landcover_delta_negative = f.properties.delta_negative;
+  //
+  var fl = geodash.api.getFeatureLayer(layerID);
+  var normalizedFeature = geodash.normalize.feature(f);
+  //
+  var popatrisk_range = extract(["filters", layerID, "popatrisk_range"], state);
+  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+  var ldi = normalizedFeature.attributes.ldi;
+  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+  var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+  var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
 
-  var value = sparc.calc.popatrisk(
+  var value = sparc2.calc.popatrisk(
     'cyclone',
-    geodash.api.normalize_feature(f),
+    normalizedFeature,
     state,
     options.filters);
 
@@ -542,7 +573,7 @@ module.exports = function(f, state, map_config, options)
     (landcover_delta_negative == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
   )
   {
-    var colors = fl["cartography"][0]["colors"]["ramp"];
+    var colors = options["colors"]["ramp"];
     var breakpoints = geodash.breakpoints[options["breakpoints"]];
     var color = undefined;
     for(var i = 0; i < breakpoints.length -1; i++)
@@ -562,6 +593,8 @@ module.exports = function(f, state, map_config, options)
   {
     style["opacity"] = 0;
     style["fillOpacity"] = 0;
+    style["strokeOpacity"] = 0;
+    style["strokeColor"] = "rgba(0, 0, 0, 0)";
   }
   return style;
 };
@@ -569,20 +602,23 @@ module.exports = function(f, state, map_config, options)
 },{}],17:[function(require,module,exports){
 module.exports = function(f, state, map_config, options)
 {
-  var fl = geodash.api.getFeatureLayer("popatrisk");
+  var layerID = "popatrisk";
   var style = {};
-  var filters = state["filters"]["popatrisk"];
-  var popatrisk_range = filters["popatrisk_range"];
-  var ldi_range = filters["ldi_range"];
-  var ldi = f.properties.ldi;
-  var erosion_propensity_range = filters["erosion_propensity_range"];
-  var erosion_propensity = f.properties.erosion_propensity;
-  var landcover_delta_negative_range = filters["landcover_delta_negative_range"];
-  var landcover_delta_negative = f.properties.delta_negative;
+  //
+  var fl = geodash.api.getFeatureLayer(layerID);
+  var normalizedFeature = geodash.normalize.feature(f);
+  //
+  var popatrisk_range = extract(["filters", layerID, "popatrisk_range"], state);
+  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+  var ldi = normalizedFeature.attributes.ldi;
+  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+  var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+  var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
 
-  var value = sparc.calc.popatrisk(
+  var value = sparc2.calc.popatrisk(
     'drought',
-    geodash.api.normalize_feature(f),
+    normalizedFeature,
     state,
     options.filters);
 
@@ -593,7 +629,7 @@ module.exports = function(f, state, map_config, options)
     (landcover_delta_negative == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
   )
   {
-    var colors = fl["cartography"][0]["colors"]["ramp"];
+    var colors = options["colors"]["ramp"];
     var breakpoints = geodash.breakpoints[options["breakpoints"]];
     var color = undefined;
     for(var i = 0; i < breakpoints.length -1; i++)
@@ -613,6 +649,8 @@ module.exports = function(f, state, map_config, options)
   {
     style["opacity"] = 0;
     style["fillOpacity"] = 0;
+    style["strokeOpacity"] = 0;
+    style["strokeColor"] = "rgba(0, 0, 0, 0)";
   }
   return style;
 };
@@ -620,16 +658,18 @@ module.exports = function(f, state, map_config, options)
 },{}],18:[function(require,module,exports){
 module.exports = function(f, state, map_config, options)
 {
-  var fl = geodash.api.getFeatureLayer("popatrisk");
-  var normalizedFeature = geodash.normalize.feature(f);
+  var layerID = "popatrisk";
   var style = {};
-  var filters = state["filters"]["popatrisk"];
-  var popatrisk_range = filters["popatrisk_range"];
-  var ldi_range = filters["ldi_range"];
+  //
+  var fl = geodash.api.getFeatureLayer(layerID);
+  var normalizedFeature = geodash.normalize.feature(f);
+  //
+  var popatrisk_range = extract(["filters", layerID, "popatrisk_range"], state);
+  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
   var ldi = normalizedFeature.attributes.ldi;
-  var erosion_propensity_range = filters["erosion_propensity_range"];
+  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
   var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
-  var landcover_delta_negative_range = filters["landcover_delta_negative_range"];
+  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
   var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
 
   var value = sparc2.calc.popatrisk(
@@ -645,26 +685,28 @@ module.exports = function(f, state, map_config, options)
     (landcover_delta_negative == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
   )
   {
-      var colors = options["colors"]["ramp"];
-      var breakpoints = geodash.breakpoints[options["breakpoints"]];
-      var color = undefined;
-      for(var i = 0; i < breakpoints.length -1; i++)
+    var colors = options["colors"]["ramp"];
+    var breakpoints = geodash.breakpoints[options["breakpoints"]];
+    var color = undefined;
+    for(var i = 0; i < breakpoints.length -1; i++)
+    {
+      if(
+        (value == breakpoints[i] && value == breakpoints[i+1]) ||
+        (value >= breakpoints[i] && value < breakpoints[i+1])
+      )
       {
-        if(
-          (value == breakpoints[i] && value == breakpoints[i+1]) ||
-          (value >= breakpoints[i] && value < breakpoints[i+1])
-        )
-        {
-          color = colors[i];
-          break;
-        }
+        color = colors[i];
+        break;
       }
-      style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+    }
+    style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
   }
   else
   {
     style["opacity"] = 0;
     style["fillOpacity"] = 0;
+    style["strokeOpacity"] = 0;
+    style["strokeColor"] = "rgba(0, 0, 0, 0)";
   }
   return style;
 };
@@ -683,20 +725,23 @@ module.exports = {
 },{"./context":15,"./cyclone":16,"./drought":17,"./flood":18,"./landslide":20}],20:[function(require,module,exports){
 module.exports = function(f, state, map_config, options)
 {
-  var fl = geodash.api.getFeatureLayer("popatrisk");
+  var layerID = "popatrisk";
   var style = {};
-  var filters = state["filters"]["popatrisk"];
-  var popatrisk_range = filters["popatrisk_range"];
-  var ldi_range = filters["ldi_range"];
-  var ldi = f.properties.ldi;
-  var erosion_propensity_range = filters["erosion_propensity_range"];
-  var erosion_propensity = f.properties.erosion_propensity;
-  var landcover_delta_negative_range = filters["landcover_delta_negative_range"];
-  var landcover_delta_negative = f.properties.delta_negative;
+  //
+  var fl = geodash.api.getFeatureLayer(layerID);
+  var normalizedFeature = geodash.normalize.feature(f);
+  //
+  var popatrisk_range = extract(["filters", layerID, "popatrisk_range"], state);
+  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+  var ldi = normalizedFeature.attributes.ldi;
+  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+  var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+  var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
 
-  var value = sparc.calc.popatrisk(
+  var value = sparc2.calc.popatrisk(
     'landslide',
-    geodash.api.normalize_feature(f),
+    normalizedFeature,
     state,
     options.filters);
 
@@ -707,26 +752,28 @@ module.exports = function(f, state, map_config, options)
     (landcover_delta_negative == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
   )
   {
-      var colors = fl["cartography"][0]["colors"]["ramp"];
-      var breakpoints = geodash.breakpoints[options["breakpoints"]];
-      var color = undefined;
-      for(var i = 0; i < breakpoints.length -1; i++)
+    var colors = options["colors"]["ramp"];
+    var breakpoints = geodash.breakpoints[options["breakpoints"]];
+    var color = undefined;
+    for(var i = 0; i < breakpoints.length -1; i++)
+    {
+      if(
+        (value == breakpoints[i] && value == breakpoints[i+1]) ||
+        (value >= breakpoints[i] && value < breakpoints[i+1])
+      )
       {
-        if(
-          (value == breakpoints[i] && value == breakpoints[i+1]) ||
-          (value >= breakpoints[i] && value < breakpoints[i+1])
-        )
-        {
-          color = colors[i];
-          break;
-        }
+        color = colors[i];
+        break;
       }
-      style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+    }
+    style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
   }
   else
   {
     style["opacity"] = 0;
     style["fillOpacity"] = 0;
+    style["strokeOpacity"] = 0;
+    style["strokeColor"] = "rgba(0, 0, 0, 0)";
   }
   return style;
 };
@@ -830,10 +877,291 @@ module.exports = {
   charts: require("./charts"),
   dynamicStyleFn: require("./dynamicStyleFn"),
   filters: require("./filters"),
+  popup: require("./popup"),
+  transport: require("./transport"),
   typeahead: require("./typeahead")
 };
 
-},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./dynamicStyleFn":19,"./filters":21,"./typeahead":28}],25:[function(require,module,exports){
+},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./dynamicStyleFn":19,"./filters":21,"./popup":25,"./transport":35,"./typeahead":40}],25:[function(require,module,exports){
+'use strict';
+/*global require, window, console, jQuery, $, angular, Bloodhound, location */
+module.exports = {
+  initChart: require("./initChart")
+};
+
+},{"./initChart":26}],26:[function(require,module,exports){
+module.exports = function(featureLayer, feature, location, map, state)
+{
+  var panes = extract("popup.panes", featureLayer);
+  if(Array.isArray(panes))
+  {
+    for(var i = 0; i < panes.length; i++)
+    {
+      var pane = panes[i];
+      var charts = extract("charts", pane)
+      if(Array.isArray(charts))
+      {
+        for(var j = 0; j < charts.length; j++)
+        {
+          var chartConfig = charts[j];
+          var initialData = extract("layers.popatrisk", geodash.initial_data);
+          var admin2_code = extract("attributes.admin2_code", feature);
+
+          if(angular.isDefined(admin2_code))
+          {
+            var gc = sparc2.charts.buildGroupsAndColumnsForAdmin2(
+              chartConfig,
+              initialData,
+              admin2_code);
+
+            sparc2.charts.buildHazardChart(chartConfig, initialData, {
+              groups: gc.groups,
+              columns: gc.columns,
+              bullet_width: function(d, i) { return d.id == "rp25" ? 6 : 12; }
+            });
+          }
+        }
+      }
+    }
+  }
+};
+
+},{}],27:[function(require,module,exports){
+'use strict';
+/*global require, window, console, jQuery, $, angular, Bloodhound, location */
+module.exports = {
+  intarray: require("./intarray"),
+  intarrays: require("./intarrays"),
+  string: require("./string"),
+  stringarray: require("./stringarray"),
+  summary: require("./summary")
+};
+
+},{"./intarray":28,"./intarrays":29,"./string":30,"./stringarray":31,"./summary":32}],28:[function(require,module,exports){
+module.exports = function(options)
+{
+  var view = options.view;
+  var littleEndian = geodash.config.transport.littleEndian;
+
+  var offset = options.offset;
+  var count = options.count;
+
+  var decoded = [];
+  for(var i = 0; i < count; i++)
+  {
+    decoded.push(view.getInt32(offset+(4*i), littleEndian));
+  }
+  return decoded;
+};
+
+},{}],29:[function(require,module,exports){
+module.exports = function(options)
+{
+  var view = options.view;
+  var littleEndian = geodash.config.transport.littleEndian;
+
+  var offset = options.offset;
+  var keys = options.keys;
+  var valuesPerKey = options.valuesPerKey;
+
+  var intarray = [];
+  var k = 0;
+  for(var i = 0; i < keys.length; i++)
+  {
+    for(var j = 0; j < valuesPerKey; j++)
+    {
+      intarray.push(view.getInt32(offset+(4*k), littleEndian));
+      k++;
+    }
+  }
+  var decoded = {};
+  for(var i = 0; i < keys.length; i++)
+  {
+    decoded[keys[i]] = intarray.slice(valuesPerKey*i,valuesPerKey*(i+1));
+  }
+  return decoded;
+};
+
+},{}],30:[function(require,module,exports){
+module.exports = function(options)
+{
+  var view = options.view;
+  var littleEndian = geodash.config.transport.littleEndian;
+
+  var offset = options.offset;
+  var count = options.count;
+
+  var decoded = "";
+  for(var i = 0; i < count; i++)
+  {
+    decoded += String.fromCharCode(view.getInt32(offset+(4*i), littleEndian));
+  }
+  return decoded;
+};
+
+},{}],31:[function(require,module,exports){
+module.exports = function(options)
+{
+  var view = options.view;
+  var littleEndian = geodash.config.transport.littleEndian;
+
+  var offset = options.offset;
+  var bytesPerTerm = options.bytesPerTerm;
+  var count = options.count;
+
+  var decoded = [];
+  var k = 0;
+  for(var i = 0; i < count; i++)
+  {
+    var str = "";
+    for(var j = 0; j < bytesPerTerm; j++)
+    {
+      str += String.fromCharCode(view.getInt32(offset+(4*k), littleEndian));
+      k++;
+    }
+    decoded.push(str.trim())
+  }
+  return decoded;
+};
+
+},{}],32:[function(require,module,exports){
+module.exports = function(response, offset)
+{
+  offset = offset || 0;
+
+  var view = sparc2.transport.load(response);
+
+  var h = sparc2.transport.header.summary({'view': view, 'offset': offset}); offset += 4*(Object.keys(h).length);
+
+  var maxValue = view.getInt32(offset, geodash.config.transport.littleEndian); offset += 4*1;
+
+  var natural = sparc2.transport.decode.intarray({
+    'view': view,
+    'offset': offset,
+    'count': h["all_breakpoints_natural"]
+  }); offset += 4 * h["all_breakpoints_natural"];
+
+  var natural_adjusted = sparc2.transport.decode.intarray({
+    'view': view,
+    'offset': offset,
+    'count': h["all_breakpoints_natural_adjusted"]
+  }); offset += 4 * h["all_breakpoints_natural_adjusted"];
+
+  var prob_classes = sparc2.transport.decode.stringarray({
+    'view': view,
+    'offset': offset,
+    'count': h["prob_classes"],
+    'bytesPerTerm': h["prob_class_name_size"]
+  }); offset += 4 * h["prob_classes"] * h["prob_class_name_size"];
+
+  var data_by_prob_class = sparc2.transport.decode.intarrays({
+    'view': view,
+    'offset': offset,
+    'keys': prob_classes,
+    'valuesPerKey': 12,
+  }); offset += 4 * h["prob_classes"] * 12;
+
+  for(var i = 0; i < prob_classes.length; i++)
+  {
+    var prob_class = prob_classes[i];
+    data_by_prob_class[prob_class] = {
+      "by_month": data_by_prob_class[prob_class]
+    };
+  }
+  var admin2_codes = sparc2.transport.decode.intarray({
+    'view': view,
+    'offset': offset,
+    'count': h["admin2"]
+  }); offset += 4 * h["admin2"];
+
+  var data_by_admin2_prob_class = {};
+  var admin2_code = undefined;
+  var prob_class = undefined;
+  for(var i = 0; i < admin2_codes.length; i++)
+  {
+    admin2_code = admin2_codes[i];
+    data_by_admin2_prob_class[""+admin2_code] = {"prob_class": {}};
+    for(var j = 0; j < prob_classes.length; j++)
+    {
+      prob_class = prob_classes[j];
+      var values = sparc2.transport.decode.intarray({
+        'view': view,
+        'offset': offset,
+        'count': 12
+      }); offset += 4 * 12;
+      data_by_admin2_prob_class[""+admin2_code]["prob_class"][prob_class] =
+      {
+        "by_month": values
+      }
+    }
+  }
+
+  summary = {
+    "header": h,
+    "all": {
+      "max": {
+        "at_admin2_month": maxValue
+      },
+      "breakpoints": {
+        "natural": natural,
+        "natural_adjusted": natural_adjusted
+      }
+    },
+    "prob_class": data_by_prob_class,
+    "admin2": data_by_admin2_prob_class
+  };
+  
+  return summary;
+};
+
+},{}],33:[function(require,module,exports){
+'use strict';
+/*global require, window, console, jQuery, $, angular, Bloodhound, location */
+module.exports = {
+  summary: require("./summary")
+};
+
+},{"./summary":34}],34:[function(require,module,exports){
+module.exports = function(options)
+{
+  var view = options.view;
+  var offset = options.offset;
+  var littleEndian = geodash.config.transport.littleEndian;
+
+  var fields = ["prob_class_name_size", "prob_classes", "admin2", "all_breakpoints_natural", "all_breakpoints_natural_adjusted"];
+
+  var header = {};
+  for(var i = 0; i < fields.length; i++)
+  {
+    header[fields[i]] = view.getInt32(offset+(4*i), littleEndian);
+  }
+  return header;
+};
+
+},{}],35:[function(require,module,exports){
+'use strict';
+/*global require, window, console, jQuery, $, angular, Bloodhound, location */
+module.exports = {
+  header: require("./header"),
+  decode: require("./decode"),
+  load: require("./load")
+};
+
+},{"./decode":27,"./header":33,"./load":36}],36:[function(require,module,exports){
+module.exports = function(response)
+{
+  //var r = response.split(",");
+  var r = response;
+  var view = new DataView(new ArrayBuffer(r.length));
+  for(var i = 0; i < r.length; i++)
+  {
+    //view.setInt8(i, parseInt(r[i], 16));
+    view.setInt8(i, r.charCodeAt(i));
+  }
+  return view;
+};
+
+},{}],37:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -848,15 +1176,12 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
     codecs: codecs
   };
   var prefetch = geodash.bloodhound.prefetch(prefetchOptions);
-  var remoteOptions = {
-    url: url,
-    dataType: 'json',
-    codec: "Countries",
-    rate: 1000,
-    codecs: codecs
-  };
-  var remote = geodash.bloodhound.remote(remoteOptions);
-  var engine = geodash.bloodhound.engine(local, prefetch, remote);
+  var remote = undefined;
+  var engine = geodash.bloodhound.engine({
+    "local": local,
+    "prefetch": prefetch,
+    "remote": remote
+  });
   var templates = {
     suggestion: template_suggestion
   };
@@ -882,7 +1207,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],26:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -897,15 +1222,12 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
     codecs: codecs
   };
   var prefetch = geodash.bloodhound.prefetch(prefetchOptions);
-  var remoteOptions = {
-    url: url,
-    dataType: 'json',
-    codec: "Hazards",
-    rate: 1000,
-    codecs: codecs
-  };
-  var remote = geodash.bloodhound.remote(remoteOptions);
-  var engine = geodash.bloodhound.engine(local, prefetch, remote);
+  var remote = undefined;
+  var engine = geodash.bloodhound.engine({
+    "local": local,
+    "prefetch": prefetch,
+    "remote": remote
+  });
   var templates = {
     suggestion: template_suggestion
   };
@@ -931,7 +1253,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -939,11 +1261,11 @@ module.exports = {
   Hazards: require("./Hazards")
 };
 
-},{"./Countries":25,"./Hazards":26}],28:[function(require,module,exports){
+},{"./Countries":37,"./Hazards":38}],40:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   datasets: require("./datasets")
 };
 
-},{"./datasets":27}]},{},[1]);
+},{"./datasets":39}]},{},[1]);
