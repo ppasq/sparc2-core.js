@@ -1,4 +1,4 @@
-module.exports = function(f, state, map_config, options)
+module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
   var style = {};

@@ -16,8 +16,8 @@ module.exports = function(options)
   geodash.api.intend("toggleModal", intentData, scope);*/
 
   var id = "geodash-modal-sparc-welcome";
-  var main_scope = geodash.api.getScope("geodash-main");
-  var modal_scope = geodash.api.getScope(id);
+  var main_scope = geodash.util.getScope("geodash-main");
+  var modal_scope = geodash.util.getScope(id);
   modal_scope.$apply(function (){
     modal_scope.push({
       "welcome": extract("welcome", main_scope.config || main_scope.map_config)

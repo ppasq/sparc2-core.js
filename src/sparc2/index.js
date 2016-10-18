@@ -7,6 +7,7 @@ module.exports = {
   charts: require("./charts"),
   dynamicStyleFn: require("./dynamicStyleFn"),
   filters: require("./filters"),
+  loaders: require("./loaders"),
   popup: require("./popup"),
   transport: require("./transport"),
   typeahead: require("./typeahead")
