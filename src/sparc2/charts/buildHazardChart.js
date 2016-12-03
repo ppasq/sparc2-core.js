@@ -58,6 +58,54 @@ module.exports = function(chartConfig, popatrisk_config, options)
     axisConfig["y"]["label"] = chartConfig.axis.y.label;
     axisConfig["y"]["tick"] = {format: d3.format("s,")};
 
+    var tooltipFormatNameFn = undefined;
+    var tooltipNameFnName = extract("tooltip.name", chartConfig);
+    if(angular.isString(tooltipNameFnName))
+    {
+      var tooltipCollections = extract("config.charts.tooltips", geodash);
+      if(Array.isArray(tooltipCollections))
+      {
+        for(var i = 0; i < tooltipCollections.length; i++)
+        {
+          var tooltipCollection = tooltipCollections[i];
+          if(angular.isDefined(tooltipCollection))
+          {
+            tooltipFormatNameFn = extract(tooltipNameFnName, tooltipCollection);
+            if(angular.isDefined(tooltipFormatNameFn))
+            {
+              break;
+            }
+          }
+        }
+      }
+    }
+    var tooltipFormatValueFn = undefined;
+    var tooltipValueFnName = extract("tooltip.value", chartConfig);
+    if(angular.isString(tooltipValueFnName))
+    {
+      var tooltipCollections = extract("config.charts.tooltips", geodash);
+      if(Array.isArray(tooltipCollections))
+      {
+        for(var i = 0; i < tooltipCollections.length; i++)
+        {
+          var tooltipCollection = tooltipCollections[i];
+          if(angular.isDefined(tooltipCollection))
+          {
+            tooltipFormatValueFn = extract(tooltipValueFnName, tooltipCollection);
+            if(angular.isDefined(tooltipFormatValueFn))
+            {
+              break;
+            }
+          }
+        }
+      }
+    }
+    var tooltipConfig = {
+      format: {
+        name: tooltipFormatNameFn,
+        value: tooltipFormatValueFn
+      }
+    };
     var chartID = (chartConfig.element || chartConfig.id);
     var chartActual = c3.generate({
       bindto: "#"+ chartID,
@@ -69,7 +117,8 @@ module.exports = function(chartConfig, popatrisk_config, options)
         order: (gc.order || 'desc')
       },
       axis : axisConfig,
-      bar: barConfig
+      bar: barConfig,
+      tooltip: tooltipConfig
     });
 
     $("#"+ chartID).data('chart', chartActual);

@@ -3,5 +3,6 @@
 module.exports = {
   buildHazardChart: require("./buildHazardChart"),
   buildGroupsAndColumnsForCountry: require("./buildGroupsAndColumnsForCountry"),
-  buildGroupsAndColumnsForAdmin2: require("./buildGroupsAndColumnsForAdmin2")
+  buildGroupsAndColumnsForAdmin2: require("./buildGroupsAndColumnsForAdmin2"),
+  tooltips: require("./tooltips")
 };

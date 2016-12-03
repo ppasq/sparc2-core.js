@@ -35,7 +35,7 @@ module.exports = function(f, state, dashboard, options)
         }
         else
         {
-          style["fillColor"] = extract("dynamic.options.colors.outside", symbolizer); //symbolizer["colors"]["outside"]
+          style["fillColor"] = extract("colors.outside", options); //symbolizer["colors"]["outside"]
           colorize = false;
         }
       }
@@ -44,20 +44,8 @@ module.exports = function(f, state, dashboard, options)
       {
         var value = extract(["attributes", attr], normalizedFeature);
         var colors = options["classes"].map(function(x){ return x["color"]; });
-        var breakpoints = geodash.breakpoints[options["breakpoints"]];
-        var color = undefined;
-        for(var i = 0; i < breakpoints.length -1; i++)
-        {
-          if(
-            (value == breakpoints[i] && value == breakpoints[i+1]) ||
-            (value >= breakpoints[i] && value < breakpoints[i+1])
-          )
-          {
-            color = colors[i];
-            break;
-          }
-        }
-        style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+        style["fillColor"] = extract([value - 1], colors) || extract(["colors", "outside"], options); //options["colors"]["ramp"];
+        //style["fillColor"] = (color == undefined) ? colors[value-1] : color;
       }
     }
     else

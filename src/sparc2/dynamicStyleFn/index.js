@@ -5,5 +5,6 @@ module.exports = {
   cyclone: require("./cyclone"),
   drought: require("./drought"),
   flood: require("./flood"),
-  landslide: require("./landslide")
+  landslide: require("./landslide"),
+  ldi: require("./ldi")
 };

@@ -1,4 +1,4 @@
-module.exports = function()
+module.exports = function(options)
 {
   var args = arguments;
   var zero_lc = args[0].toLowerCase();

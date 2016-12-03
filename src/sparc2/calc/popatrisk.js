@@ -12,9 +12,8 @@ module.exports = function(hazard, feature, state, filters)
       var a = feature.attributes.addinfo[i];
       if(a["category"] == category)
       {
-        if(a["prob_class_max"] >= prob_class_max)
+        if(a["prob_class_min"] >= prob_class_max)
         {
-          console.log("matched prob_class", prob_class_max);
           value += a[month_short3];
         }
       }
@@ -26,7 +25,7 @@ module.exports = function(hazard, feature, state, filters)
     for(var i = 0; i < feature.attributes.addinfo.length; i++)
     {
       var a = feature.attributes.addinfo[i];
-      if(a["prob_class_max"] >= prob_class_max)
+      if(a["prob_class_min"] >= prob_class_max)
       {
         value += a[month_short3];
       }
@@ -43,7 +42,7 @@ module.exports = function(hazard, feature, state, filters)
     for(var i = 0; i < feature.attributes.addinfo.length; i++)
     {
       var a = feature.attributes.addinfo[i];
-      if(a["prob_class_max"] >= prob_class_max)
+      if(a["prob_class_min"] >= prob_class_max)
       {
         value += a[month_short3];
       }

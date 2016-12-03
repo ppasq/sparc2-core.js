@@ -3,8 +3,8 @@
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 window.sparc2 = require("./sparc2");
 
-},{"./sparc2":24}],2:[function(require,module,exports){
-module.exports = function()
+},{"./sparc2":33}],2:[function(require,module,exports){
+module.exports = function(options)
 {
   var args = arguments;
   var zero_lc = args[0].toLowerCase();
@@ -157,9 +157,8 @@ module.exports = function(hazard, feature, state, filters)
       var a = feature.attributes.addinfo[i];
       if(a["category"] == category)
       {
-        if(a["prob_class_max"] >= prob_class_max)
+        if(a["prob_class_min"] >= prob_class_max)
         {
-          console.log("matched prob_class", prob_class_max);
           value += a[month_short3];
         }
       }
@@ -171,7 +170,7 @@ module.exports = function(hazard, feature, state, filters)
     for(var i = 0; i < feature.attributes.addinfo.length; i++)
     {
       var a = feature.attributes.addinfo[i];
-      if(a["prob_class_max"] >= prob_class_max)
+      if(a["prob_class_min"] >= prob_class_max)
       {
         value += a[month_short3];
       }
@@ -188,7 +187,7 @@ module.exports = function(hazard, feature, state, filters)
     for(var i = 0; i < feature.attributes.addinfo.length; i++)
     {
       var a = feature.attributes.addinfo[i];
-      if(a["prob_class_max"] >= prob_class_max)
+      if(a["prob_class_min"] >= prob_class_max)
       {
         value += a[month_short3];
       }
@@ -444,6 +443,54 @@ module.exports = function(chartConfig, popatrisk_config, options)
     axisConfig["y"]["label"] = chartConfig.axis.y.label;
     axisConfig["y"]["tick"] = {format: d3.format("s,")};
 
+    var tooltipFormatNameFn = undefined;
+    var tooltipNameFnName = extract("tooltip.name", chartConfig);
+    if(angular.isString(tooltipNameFnName))
+    {
+      var tooltipCollections = extract("config.charts.tooltips", geodash);
+      if(Array.isArray(tooltipCollections))
+      {
+        for(var i = 0; i < tooltipCollections.length; i++)
+        {
+          var tooltipCollection = tooltipCollections[i];
+          if(angular.isDefined(tooltipCollection))
+          {
+            tooltipFormatNameFn = extract(tooltipNameFnName, tooltipCollection);
+            if(angular.isDefined(tooltipFormatNameFn))
+            {
+              break;
+            }
+          }
+        }
+      }
+    }
+    var tooltipFormatValueFn = undefined;
+    var tooltipValueFnName = extract("tooltip.value", chartConfig);
+    if(angular.isString(tooltipValueFnName))
+    {
+      var tooltipCollections = extract("config.charts.tooltips", geodash);
+      if(Array.isArray(tooltipCollections))
+      {
+        for(var i = 0; i < tooltipCollections.length; i++)
+        {
+          var tooltipCollection = tooltipCollections[i];
+          if(angular.isDefined(tooltipCollection))
+          {
+            tooltipFormatValueFn = extract(tooltipValueFnName, tooltipCollection);
+            if(angular.isDefined(tooltipFormatValueFn))
+            {
+              break;
+            }
+          }
+        }
+      }
+    }
+    var tooltipConfig = {
+      format: {
+        name: tooltipFormatNameFn,
+        value: tooltipFormatValueFn
+      }
+    };
     var chartID = (chartConfig.element || chartConfig.id);
     var chartActual = c3.generate({
       bindto: "#"+ chartID,
@@ -455,7 +502,8 @@ module.exports = function(chartConfig, popatrisk_config, options)
         order: (gc.order || 'desc')
       },
       axis : axisConfig,
-      bar: barConfig
+      bar: barConfig,
+      tooltip: tooltipConfig
     });
 
     $("#"+ chartID).data('chart', chartActual);
@@ -468,82 +516,190 @@ module.exports = function(chartConfig, popatrisk_config, options)
 module.exports = {
   buildHazardChart: require("./buildHazardChart"),
   buildGroupsAndColumnsForCountry: require("./buildGroupsAndColumnsForCountry"),
-  buildGroupsAndColumnsForAdmin2: require("./buildGroupsAndColumnsForAdmin2")
+  buildGroupsAndColumnsForAdmin2: require("./buildGroupsAndColumnsForAdmin2"),
+  tooltips: require("./tooltips")
 };
 
-},{"./buildGroupsAndColumnsForAdmin2":11,"./buildGroupsAndColumnsForCountry":12,"./buildHazardChart":13}],15:[function(require,module,exports){
-module.exports = function(f, state, dashboard, options)
+},{"./buildGroupsAndColumnsForAdmin2":11,"./buildGroupsAndColumnsForCountry":12,"./buildHazardChart":13,"./tooltips":19}],15:[function(require,module,exports){
+module.exports = function(value, ratio, id, index)
 {
-  var layerID = "context";
-  var style = {};
-  //
-  var fl = geodash.api.getFeatureLayer(layerID);
-  var normalizedFeature = geodash.normalize.feature(f);
-  //
-  var ldi_range = extract(["filters", layerID, "ldi_range"], state);
-  var ldi = normalizedFeature.attributes.ldi;
-  var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
-  var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
-  var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
-  var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
-  //
-  if(
-    (ldi == undefined || ldi_range == undefined || (ldi >= ldi_range[0] && ldi <= ldi_range[1])) &&
-    (erosion_propensity == undefined || erosion_propensity_range == undefined || (erosion_propensity >= erosion_propensity_range[0] && erosion_propensity <= erosion_propensity_range[1])) &&
-    (landcover_delta_negative == undefined || landcover_delta_negative_range == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
-  )
-  {
-    var currentStyleID = state["styles"][layerID];
-    var currentStyleList = $.grep(fl["cartography"], function(style, i){return style.id == currentStyleID;});
-    var currentStyle = (currentStyleList.length == 1) ? currentStyleList[0] : fl["cartography"][0];
-    //
-    var colorize = true;
-    if("mask" in currentStyle)
-    {
-      if(normalizedFeature.attributes[currentStyle["mask"]] == 1)
-      {
-        colorize = true;
-      }
-      else
-      {
-        style["fillColor"] = currentStyle["colors"]["outside"]
-        colorize = false;
-      }
-    }
+  return geodash.codec.formatInteger(value, "delimited", " ");
+};
 
-    if(colorize)
-    {
-      var value = normalizedFeature.attributes[currentStyle["attribute"]];
-      var colors = currentStyle["colors"]["ramp"];
-      var breakPointsName = currentStyle["breakpoints"] || "natural_adjusted";
-      var breakpoints = geodash.initial_data.layers[layerID]["data"]["summary"]["all"]["breakpoints"][breakPointsName];
-      var color = undefined;
-      for(var i = 0; i < breakpoints.length -1; i++)
-      {
-        if(
-          (value == breakpoints[i] && value == breakpoints[i+1]) ||
-          (value >= breakpoints[i] && value < breakpoints[i+1])
-        )
-        {
-          color = colors[i];
-          break;
-        }
-      }
-      style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
-    }
+},{}],16:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15}],17:[function(require,module,exports){
+module.exports = function(value, ratio, id, index)
+{
+  if(value == "rp25")
+  {
+    return "Every 25 Years (4%)"
+  }
+  else if(value == "rp100")
+  {
+    return "Every 100 Years (1%)"
+  }
+  else if(value == "rp1000")
+  {
+    return "Every 1000 Years (0.1%)"
   }
   else
   {
-    style["opacity"] = 0;
-    style["fillOpacity"] = 0;
-    style["strokeOpacity"] = 0;
-    style["strokeColor"] = "rgba(0, 0, 0, 0)";
+    return value;
+  }
+};
+
+},{}],18:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15}],19:[function(require,module,exports){
+'use strict';
+/*global require, window, console, jQuery, $, angular, Bloodhound, location */
+module.exports = {
+  cyclone_value: require("./cyclone_value"),
+  drought_value: require("./drought_value"),
+  flood_name: require("./flood_name"),
+  flood_value: require("./flood_value"),
+  landslide_value: require("./landslide_value")
+};
+
+},{"./cyclone_value":15,"./drought_value":16,"./flood_name":17,"./flood_value":18,"./landslide_value":20}],20:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15}],21:[function(require,module,exports){
+module.exports = function(layer, style, classes)
+{
+  if(angular.isDefined(layer) && angular.isDefined(classes))
+  {
+    if(layer.id == "popatrisk")
+    {
+      classes = classes.map(function(x, i, arr)
+      {
+        var value = extract(["popatrisk_natural_adjusted", i + 1], geodash.breakpoints, 0);
+        var prev = extract(["popatrisk_natural_adjusted", i ], geodash.breakpoints, 0);
+        if(angular.isDefined(value))
+        {
+          if(value >= 1000000)
+          {
+            x['label'] = Math.floor(prev / 1000000) + "M - " + Math.floor(value / 1000000) + "M";
+            x['title'] = prev + " - " + value;
+          }
+          else if(value >= 1000)
+          {
+            x['label'] = Math.floor(prev / 1000) + "K - " + Math.floor(value / 1000) + "K";
+            x['title'] = prev + " - " + value;
+          }
+          else if(value > 0)
+          {
+            x['label'] = prev + " - " + value;
+            x['title'] = prev + " - " + value;
+          }
+          else
+          {
+            x['label'] = "Zero"
+            x['title'] = "Zero"
+          }
+        }
+        return x;
+      });
+    }
+    else
+    {
+      classes = classes.map(function(x, i, arr)
+      {
+        if(! angular.isDefined(extract("title", x)))
+        {
+          x['title'] = extract("label", x) || extract("value", x);
+        }
+
+        return x;
+      });
+    }
+  }
+  return classes;
+};
+
+},{}],22:[function(require,module,exports){
+'use strict';
+
+module.exports = {
+  default: require("./default")
+};
+
+},{"./default":21}],23:[function(require,module,exports){
+module.exports = function(f, state, dashboard, options)
+{
+  var style = {};
+  var layerID = extract("layer", options);
+
+  if(angular.isDefined(layerID))
+  {
+    var fl = geodash.api.getFeatureLayer(layerID);
+    var normalizedFeature = geodash.normalize.feature(f);
+    //
+
+    var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+    var ldi = normalizedFeature.attributes.ldi;
+    var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+    var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+    var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+    var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
+    //
+    if(
+      (ldi == undefined || ldi_range == undefined || (ldi >= ldi_range[0] && ldi <= ldi_range[1])) &&
+      (erosion_propensity == undefined || erosion_propensity_range == undefined || (erosion_propensity >= erosion_propensity_range[0] && erosion_propensity <= erosion_propensity_range[1])) &&
+      (landcover_delta_negative == undefined || landcover_delta_negative_range == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
+    )
+    {
+      var symbolizer = extract(["carto", "styles", 0, "symbolizers", 0], fl);
+      var mask = extract("mask", options);
+      var attr = extract("attribute", options);
+      //
+      var colorize = true;
+      if(angular.isDefined(mask))
+      {
+        if(normalizedFeature.attributes[mask] == 1)
+        {
+          colorize = true;
+        }
+        else
+        {
+          style["fillColor"] = extract("dynamic.options.colors.outside", symbolizer); //symbolizer["colors"]["outside"]
+          colorize = false;
+        }
+      }
+
+      if(colorize)
+      {
+        var value = extract(["attributes", attr], normalizedFeature);
+        var colors = options["classes"].map(function(x){ return x["color"]; });
+        var breakpoints = geodash.breakpoints[options["breakpoints"]];
+        var color = undefined;
+        for(var i = 0; i < breakpoints.length -1; i++)
+        {
+          if(
+            (value == breakpoints[i] && value == breakpoints[i+1]) ||
+            (value >= breakpoints[i] && value < breakpoints[i+1])
+          )
+          {
+            color = colors[i];
+            break;
+          }
+        }
+        style["fillColor"] = (color == undefined) ? colors[colors.length-1] : color;
+      }
+    }
+    else
+    {
+      style["opacity"] = 0;
+      style["fillOpacity"] = 0;
+      style["strokeOpacity"] = 0;
+      style["strokeColor"] = "rgba(0, 0, 0, 0)";
+    }
   }
 
   return style;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -599,7 +755,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -655,7 +811,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -711,7 +867,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],19:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -719,10 +875,11 @@ module.exports = {
   cyclone: require("./cyclone"),
   drought: require("./drought"),
   flood: require("./flood"),
-  landslide: require("./landslide")
+  landslide: require("./landslide"),
+  ldi: require("./ldi")
 };
 
-},{"./context":15,"./cyclone":16,"./drought":17,"./flood":18,"./landslide":20}],20:[function(require,module,exports){
+},{"./context":23,"./cyclone":24,"./drought":25,"./flood":26,"./landslide":28,"./ldi":29}],28:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -778,7 +935,70 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],21:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
+module.exports = function(f, state, dashboard, options)
+{
+  var style = {};
+  var layerID = extract("layer", options);
+
+  if(angular.isDefined(layerID))
+  {
+    var fl = geodash.api.getFeatureLayer(layerID);
+    var normalizedFeature = geodash.normalize.feature(f);
+    //
+
+    var ldi_range = extract(["filters", layerID, "ldi_range"], state);
+    var ldi = normalizedFeature.attributes.ldi;
+    var erosion_propensity_range = extract(["filters", layerID, "erosion_propensity_range"], state);
+    var erosion_propensity = normalizedFeature.attributes.erosion_propensity;
+    var landcover_delta_negative_range = extract(["filters", layerID, "landcover_delta_negative_range"], state);
+    var landcover_delta_negative = normalizedFeature.attributes.delta_negative;
+    //
+    if(
+      (ldi == undefined || ldi_range == undefined || (ldi >= ldi_range[0] && ldi <= ldi_range[1])) &&
+      (erosion_propensity == undefined || erosion_propensity_range == undefined || (erosion_propensity >= erosion_propensity_range[0] && erosion_propensity <= erosion_propensity_range[1])) &&
+      (landcover_delta_negative == undefined || landcover_delta_negative_range == undefined || (landcover_delta_negative >= landcover_delta_negative_range[0] && landcover_delta_negative <= landcover_delta_negative_range[1]))
+    )
+    {
+      var symbolizer = extract(["carto", "styles", 0, "symbolizers", 0], fl);
+      var mask = extract("mask", options);
+      var attr = extract("attribute", options);
+      //
+      var colorize = true;
+      if(angular.isDefined(mask))
+      {
+        if(normalizedFeature.attributes[mask] == 1)
+        {
+          colorize = true;
+        }
+        else
+        {
+          style["fillColor"] = extract("colors.outside", options); //symbolizer["colors"]["outside"]
+          colorize = false;
+        }
+      }
+
+      if(colorize)
+      {
+        var value = extract(["attributes", attr], normalizedFeature);
+        var colors = options["classes"].map(function(x){ return x["color"]; });
+        style["fillColor"] = extract([value - 1], colors) || extract(["colors", "outside"], options); //options["colors"]["ramp"];
+        //style["fillColor"] = (color == undefined) ? colors[value-1] : color;
+      }
+    }
+    else
+    {
+      style["opacity"] = 0;
+      style["fillOpacity"] = 0;
+      style["strokeOpacity"] = 0;
+      style["strokeColor"] = "rgba(0, 0, 0, 0)";
+    }
+  }
+
+  return style;
+};
+
+},{}],30:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -786,7 +1006,7 @@ module.exports = {
   vam_filter_fcs: require("./vam_filter_fcs")
 };
 
-},{"./vam_filter_csi":22,"./vam_filter_fcs":23}],22:[function(require,module,exports){
+},{"./vam_filter_csi":31,"./vam_filter_fcs":32}],31:[function(require,module,exports){
 module.exports = function(value, filters, f)
 {
   // Adjust by VAM FCS Filter
@@ -826,7 +1046,7 @@ module.exports = function(value, filters, f)
   return value;
 };
 
-},{}],23:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 module.exports = function(value, filters, f)
 {
   // Adjust by VAM FCS Filter
@@ -867,7 +1087,7 @@ module.exports = function(value, filters, f)
   return value;
 };
 
-},{}],24:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -875,6 +1095,7 @@ module.exports = {
   bloodhound: require("./bloodhound"),
   calc: require("./calc"),
   charts: require("./charts"),
+  classifier: require("./classifier"),
   dynamicStyleFn: require("./dynamicStyleFn"),
   filters: require("./filters"),
   loaders: require("./loaders"),
@@ -883,7 +1104,39 @@ module.exports = {
   typeahead: require("./typeahead")
 };
 
-},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./dynamicStyleFn":19,"./filters":21,"./loaders":26,"./popup":29,"./transport":39,"./typeahead":44}],25:[function(require,module,exports){
+},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./classifier":22,"./dynamicStyleFn":27,"./filters":30,"./loaders":36,"./popup":39,"./transport":49,"./typeahead":54}],34:[function(require,module,exports){
+module.exports = function(response)
+{
+  var contentType = response.headers("Content-Type");
+  if(contentType == "application/json")
+  {
+    // Storing data used by GeoJSON layer
+    geodash.initial_data.layers.context.data.geojson = response.data;
+
+    // Storing data used in popups
+    geodash.initial_data["data"]["context"] = { "admin1": {} };
+    var features = extract("layers.context.data.geojson.features", geodash.initial_data, []);
+    var propertyNames = ["ldi", "delta_mean", "delta_positive", "delta_negative", "delta_crop", "delta_forest", "erosion_propensity"];
+    for(var i = 0; i < features.length; i++)
+    {
+      var feature = features[i];
+      for(var j = 0; j < propertyNames.length; j++)
+      {
+        var propertyName = propertyNames[j];
+        var admin1_code = "" + extract("properties.admin1_code", feature, "");
+        var admin2_code = "" + extract("properties.admin2_code", feature, "");
+        var value = extract(["properties", propertyName], feature, "");
+        if(admin1_code.length > 0 && admin2_code.length > 0)
+        {
+          //if(angular.isDefined(geodash.initial_data.data.context.admin1[admin1_code]))
+          geodash.util.setValue(["data", "context", "admin1", admin1_code, "admin2", admin2_code, propertyName], value, geodash.initial_data);
+        }
+      }
+    }
+  }
+};
+
+},{}],35:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -906,16 +1159,17 @@ module.exports = function(response)
 
 };
 
-},{}],26:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 'use strict';
 
 module.exports = {
+  context_geojson: require("./context_geojson"),
   context_summary: require("./context_summary"),
   popatrisk_summary: require("./popatrisk_summary"),
   vam_geojson: require("./vam_geojson")
 };
 
-},{"./context_summary":25,"./popatrisk_summary":27,"./vam_geojson":28}],27:[function(require,module,exports){
+},{"./context_geojson":34,"./context_summary":35,"./popatrisk_summary":37,"./vam_geojson":38}],37:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -941,7 +1195,7 @@ module.exports = function(response)
   }
 };
 
-},{}],28:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -964,14 +1218,14 @@ module.exports = function(response)
   }
 };
 
-},{}],29:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   initChart: require("./initChart")
 };
 
-},{"./initChart":30}],30:[function(require,module,exports){
+},{"./initChart":40}],40:[function(require,module,exports){
 module.exports = function(featureLayer, feature, location, map, state)
 {
   var panes = extract("popup.panes", featureLayer);
@@ -1008,7 +1262,7 @@ module.exports = function(featureLayer, feature, location, map, state)
   }
 };
 
-},{}],31:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1019,7 +1273,7 @@ module.exports = {
   summary: require("./summary")
 };
 
-},{"./intarray":32,"./intarrays":33,"./string":34,"./stringarray":35,"./summary":36}],32:[function(require,module,exports){
+},{"./intarray":42,"./intarrays":43,"./string":44,"./stringarray":45,"./summary":46}],42:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1036,7 +1290,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],33:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1064,7 +1318,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1081,7 +1335,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],35:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1106,7 +1360,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],36:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 module.exports = function(response, offset)
 {
   offset = offset || 0;
@@ -1196,14 +1450,14 @@ module.exports = function(response, offset)
   return summary;
 };
 
-},{}],37:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   summary: require("./summary")
 };
 
-},{"./summary":38}],38:[function(require,module,exports){
+},{"./summary":48}],48:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1220,7 +1474,7 @@ module.exports = function(options)
   return header;
 };
 
-},{}],39:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1229,7 +1483,7 @@ module.exports = {
   load: require("./load")
 };
 
-},{"./decode":31,"./header":37,"./load":40}],40:[function(require,module,exports){
+},{"./decode":41,"./header":47,"./load":50}],50:[function(require,module,exports){
 module.exports = function(response)
 {
   //var r = response.split(",");
@@ -1243,7 +1497,7 @@ module.exports = function(response)
   return view;
 };
 
-},{}],41:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -1289,7 +1543,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],42:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -1335,7 +1589,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],43:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1343,11 +1597,11 @@ module.exports = {
   Hazards: require("./Hazards")
 };
 
-},{"./Countries":41,"./Hazards":42}],44:[function(require,module,exports){
+},{"./Countries":51,"./Hazards":52}],54:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   datasets: require("./datasets")
 };
 
-},{"./datasets":43}]},{},[1]);
+},{"./datasets":53}]},{},[1]);
