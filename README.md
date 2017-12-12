@@ -2,7 +2,9 @@
 
 Low-level Javascript API for SPARC 2.x.  This API includes a variety of low-level functions used by the SPARC 2.x application, including functions to filter by VAM indicators, and calculate population at risk from multiple probabilitiy levels.  `sparc2-core.js` is a dependency of the `sparc2` Django application.
 
-GeoDashJS is added at [/sparc2/static/sparc2/lib/sparc2-core/](https://github.com/wfp-ose/sparc2/tree/master/sparc2/static/sparc2/lib/sparc2-core) to the [sparc2](https://github.com/wfp-ose/sparc2) project.
+GeoDashJS is added at !! broken link [/sparc2/static/sparc2/lib/sparc2-core/](https://github.com/wfp-ose/sparc2/tree/master/sparc2/static/sparc2/lib/sparc2-core) 
+
+to the [sparc2](https://github.com/wfp-ose/sparc2) project.
 
 ## GeoDash
 
