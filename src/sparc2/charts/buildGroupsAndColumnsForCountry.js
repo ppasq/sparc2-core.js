@@ -30,8 +30,10 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      columns.push([prob_class].concat(data));
-      groups[0].push(prob_class);
+      // add % symbol to column values 
+      var percent = prob_class +'%'
+      columns.push([percent].concat(data));
+      groups[0].push(percent);
     });
 
     groups[0].sort(function(a, b){
