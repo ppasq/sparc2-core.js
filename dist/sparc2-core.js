@@ -3,7 +3,7 @@
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 window.sparc2 = require("./sparc2");
 
-},{"./sparc2":34}],2:[function(require,module,exports){
+},{"./sparc2":33}],2:[function(require,module,exports){
 module.exports = function(options)
 {
   var args = arguments;
@@ -303,8 +303,20 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      columns.push([prob_class].concat(data));
-      groups[0].push(prob_class);
+      // add % symbol to column values
+      var prob_perc;
+      if (prob_class == "0.01-0.1") {prob_perc = "0.1-10%"}
+      if (prob_class == "0.1-0.2") {prob_perc = "10-20%"}
+      if (prob_class == "0.2-0.3") {prob_perc = "20-30%"}
+      if (prob_class == "0.3-0.4") {prob_perc = "30-40%"}
+      if (prob_class == "0.4-0.5") {prob_perc = "40-50%"}
+      if (prob_class == "0.5-0.6") {prob_perc = "50-60%"}
+      if (prob_class == "0.6-0.7") {prob_perc = "60-70%"}
+      if (prob_class == "0.7-0.8") {prob_perc = "70-80%"}
+      if (prob_class == "0.8-0.9") {prob_perc = "80-90%"}
+      if (prob_class == "0.9-1.0") {prob_perc = "90-100%"}
+      columns.push([prob_perc].concat(data));
+      groups[0].push(prob_perc);
     });
 
     groups[0].sort(function(a, b){
@@ -324,13 +336,16 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      // console.log('buildGroupsAndColumnsForCountry.js');
-      // console.log(data);
-      // console.log(prob_class);
-      // add % symbol to legend
-      var percent = prob_class +'%'
-      columns.push([percent].concat(data));
-      groups[0].push(percent);
+      console.log('buildGroupsAndColumnsForCountry.js');
+      // console.log(value);
+      console.log(prob_class);
+      var prob_perc;
+      if (prob_class == "0.01-0.05") {prob_perc = "0.1-0.5%"}
+      if (prob_class == "0.06-0.10") {prob_perc = "0.6-10%"}
+      if (prob_class == "0.11-0.19") {prob_perc = "11-19%"}
+      if (prob_class == "0.20-1.0") {prob_perc = "20-100%"}
+      columns.push([prob_perc].concat(data));
+      groups[0].push(prob_perc);
     });
 
     groups[0].sort(function(a, b){
@@ -452,8 +467,6 @@ module.exports = function(chartConfig, popatrisk_config, options)
 
     var tooltipFormatNameFn = undefined;
     var tooltipNameFnName = extract("tooltip.name", chartConfig);
-    console.log(tooltipNameFnName);
-
     if(angular.isString(tooltipNameFnName))
     {
       var tooltipCollections = extract("config.charts.tooltips", geodash);
@@ -475,7 +488,6 @@ module.exports = function(chartConfig, popatrisk_config, options)
     }
     var tooltipFormatValueFn = undefined;
     var tooltipValueFnName = extract("tooltip.value", chartConfig);
-    console.log(tooltipValueFnName);
     if(angular.isString(tooltipValueFnName))
     {
       var tooltipCollections = extract("config.charts.tooltips", geodash);
@@ -530,29 +542,15 @@ module.exports = {
   tooltips: require("./tooltips")
 };
 
-},{"./buildGroupsAndColumnsForAdmin2":11,"./buildGroupsAndColumnsForCountry":12,"./buildHazardChart":13,"./tooltips":20}],15:[function(require,module,exports){
+},{"./buildGroupsAndColumnsForAdmin2":11,"./buildGroupsAndColumnsForCountry":12,"./buildHazardChart":13,"./tooltips":19}],15:[function(require,module,exports){
 module.exports = function(value, ratio, id, index)
 {
   return geodash.codec.formatInteger(value, "delimited", " ");
 };
 
 },{}],16:[function(require,module,exports){
-module.exports = function(value, ratio, id, index)
-{
-  // console.log("drought_name");
-  // console.log(value);
-  var percent = value +" %";
-  return percent;
-};
-
-},{}],17:[function(require,module,exports){
-module.exports = function(value, ratio, id, index)
-{
-  // return geodash.codec.formatInteger(value, "delimited", "."); // TEST this return a tooltip with values separated by dot
-  return geodash.codec.formatInteger(value, "delimited", " ");
-};
-
-},{}],18:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15}],17:[function(require,module,exports){
 module.exports = function(value, ratio, id, index)
 {
   if(value == "rp25")
@@ -573,23 +571,22 @@ module.exports = function(value, ratio, id, index)
   }
 };
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],20:[function(require,module,exports){
+},{"dup":15}],19:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   cyclone_value: require("./cyclone_value"),
-  drought_name: require("./drought_name"),
   drought_value: require("./drought_value"),
   flood_name: require("./flood_name"),
   flood_value: require("./flood_value"),
   landslide_value: require("./landslide_value")
 };
 
-},{"./cyclone_value":15,"./drought_name":16,"./drought_value":17,"./flood_name":18,"./flood_value":19,"./landslide_value":21}],21:[function(require,module,exports){
+},{"./cyclone_value":15,"./drought_value":16,"./flood_name":17,"./flood_value":18,"./landslide_value":20}],20:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],22:[function(require,module,exports){
+},{"dup":15}],21:[function(require,module,exports){
 module.exports = function(layer, style, classes)
 {
   if(angular.isDefined(layer) && angular.isDefined(classes))
@@ -642,14 +639,14 @@ module.exports = function(layer, style, classes)
   return classes;
 };
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 'use strict';
 
 module.exports = {
   default: require("./default")
 };
 
-},{"./default":22}],24:[function(require,module,exports){
+},{"./default":21}],23:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var style = {};
@@ -724,7 +721,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -780,7 +777,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -836,7 +833,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -892,7 +889,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -904,7 +901,7 @@ module.exports = {
   ldi: require("./ldi")
 };
 
-},{"./context":24,"./cyclone":25,"./drought":26,"./flood":27,"./landslide":29,"./ldi":30}],29:[function(require,module,exports){
+},{"./context":23,"./cyclone":24,"./drought":25,"./flood":26,"./landslide":28,"./ldi":29}],28:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var layerID = "popatrisk";
@@ -960,7 +957,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = function(f, state, dashboard, options)
 {
   var style = {};
@@ -1023,7 +1020,7 @@ module.exports = function(f, state, dashboard, options)
   return style;
 };
 
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1031,7 +1028,7 @@ module.exports = {
   vam_filter_fcs: require("./vam_filter_fcs")
 };
 
-},{"./vam_filter_csi":32,"./vam_filter_fcs":33}],32:[function(require,module,exports){
+},{"./vam_filter_csi":31,"./vam_filter_fcs":32}],31:[function(require,module,exports){
 module.exports = function(value, filters, f)
 {
   // Adjust by VAM FCS Filter
@@ -1071,7 +1068,7 @@ module.exports = function(value, filters, f)
   return value;
 };
 
-},{}],33:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 module.exports = function(value, filters, f)
 {
   // Adjust by VAM FCS Filter
@@ -1112,7 +1109,7 @@ module.exports = function(value, filters, f)
   return value;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1129,7 +1126,7 @@ module.exports = {
   typeahead: require("./typeahead")
 };
 
-},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./classifier":23,"./dynamicStyleFn":28,"./filters":31,"./loaders":37,"./popup":40,"./transport":50,"./typeahead":55}],35:[function(require,module,exports){
+},{"./api":3,"./bloodhound":8,"./calc":9,"./charts":14,"./classifier":22,"./dynamicStyleFn":27,"./filters":30,"./loaders":36,"./popup":39,"./transport":49,"./typeahead":54}],34:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -1161,7 +1158,7 @@ module.exports = function(response)
   }
 };
 
-},{}],36:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -1184,7 +1181,7 @@ module.exports = function(response)
 
 };
 
-},{}],37:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -1194,7 +1191,7 @@ module.exports = {
   vam_geojson: require("./vam_geojson")
 };
 
-},{"./context_geojson":35,"./context_summary":36,"./popatrisk_summary":38,"./vam_geojson":39}],38:[function(require,module,exports){
+},{"./context_geojson":34,"./context_summary":35,"./popatrisk_summary":37,"./vam_geojson":38}],37:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -1220,7 +1217,7 @@ module.exports = function(response)
   }
 };
 
-},{}],39:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function(response)
 {
   var contentType = response.headers("Content-Type");
@@ -1243,14 +1240,14 @@ module.exports = function(response)
   }
 };
 
-},{}],40:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   initChart: require("./initChart")
 };
 
-},{"./initChart":41}],41:[function(require,module,exports){
+},{"./initChart":40}],40:[function(require,module,exports){
 module.exports = function(featureLayer, feature, location, map, state)
 {
   var panes = extract("popup.panes", featureLayer);
@@ -1287,7 +1284,7 @@ module.exports = function(featureLayer, feature, location, map, state)
   }
 };
 
-},{}],42:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1298,7 +1295,7 @@ module.exports = {
   summary: require("./summary")
 };
 
-},{"./intarray":43,"./intarrays":44,"./string":45,"./stringarray":46,"./summary":47}],43:[function(require,module,exports){
+},{"./intarray":42,"./intarrays":43,"./string":44,"./stringarray":45,"./summary":46}],42:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1315,7 +1312,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],44:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1343,7 +1340,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],45:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1360,7 +1357,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],46:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1385,7 +1382,7 @@ module.exports = function(options)
   return decoded;
 };
 
-},{}],47:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 module.exports = function(response, offset)
 {
   offset = offset || 0;
@@ -1475,14 +1472,14 @@ module.exports = function(response, offset)
   return summary;
 };
 
-},{}],48:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   summary: require("./summary")
 };
 
-},{"./summary":49}],49:[function(require,module,exports){
+},{"./summary":48}],48:[function(require,module,exports){
 module.exports = function(options)
 {
   var view = options.view;
@@ -1499,7 +1496,7 @@ module.exports = function(options)
   return header;
 };
 
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1508,7 +1505,7 @@ module.exports = {
   load: require("./load")
 };
 
-},{"./decode":42,"./header":48,"./load":51}],51:[function(require,module,exports){
+},{"./decode":41,"./header":47,"./load":50}],50:[function(require,module,exports){
 module.exports = function(response)
 {
   //var r = response.split(",");
@@ -1522,7 +1519,7 @@ module.exports = function(response)
   return view;
 };
 
-},{}],52:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -1568,7 +1565,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],53:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 module.exports = function(element, featurelayers, baselayers, servers, codecs)
 {
   var datasets = [];
@@ -1614,7 +1611,7 @@ module.exports = function(element, featurelayers, baselayers, servers, codecs)
   return datasets;
 };
 
-},{}],54:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
@@ -1622,11 +1619,11 @@ module.exports = {
   Hazards: require("./Hazards")
 };
 
-},{"./Countries":52,"./Hazards":53}],55:[function(require,module,exports){
+},{"./Countries":51,"./Hazards":52}],54:[function(require,module,exports){
 'use strict';
 /*global require, window, console, jQuery, $, angular, Bloodhound, location */
 module.exports = {
   datasets: require("./datasets")
 };
 
-},{"./datasets":54}]},{},[1]);
+},{"./datasets":53}]},{},[1]);
