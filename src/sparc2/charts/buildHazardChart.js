@@ -3,8 +3,6 @@ module.exports = function(chartConfig, popatrisk_config, options)
   var gc = undefined;
   if(chartConfig.type == "bar")
   {
-    console.log('buildHazardChart.js');
-    console.log(chartConfig);
     //var groups = [[]];
     //var columns = [];
     if(options != undefined && options.groups != undefined && options.columns != undefined)
