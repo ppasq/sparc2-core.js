@@ -11,7 +11,7 @@ module.exports = function(chartConfig, popatrisk_config)
       //
       // add % symbol to column values
       var prob_perc;
-      if (prob_class == "0.01-0.1") {prob_perc = "0.1-10%"}
+      if (prob_class == "0.01-0.1") {prob_perc = "0-10%"}
       if (prob_class == "0.1-0.2") {prob_perc = "10-20%"}
       if (prob_class == "0.2-0.3") {prob_perc = "20-30%"}
       if (prob_class == "0.3-0.4") {prob_perc = "30-40%"}
@@ -46,7 +46,7 @@ module.exports = function(chartConfig, popatrisk_config)
       // console.log(value);
       console.log(prob_class);
       var prob_perc;
-      if (prob_class == "0.01-0.05") {prob_perc = "1-5%"}
+      if (prob_class == "0.01-0.05") {prob_perc = "0-5%"}
       if (prob_class == "0.05-0.10") {prob_perc = "5-10%"}
       if (prob_class == "0.10-0.20") {prob_perc = "10-20%"}
       if (prob_class == "0.20-1.0") {prob_perc = "20-100%"}
