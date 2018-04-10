@@ -336,16 +336,8 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      console.log('buildGroupsAndColumnsForCountry.js');
-      // console.log(value);
-      console.log(prob_class);
-      var prob_perc;
-      if (prob_class == "0.01-0.05") {prob_perc = "0-5%"}
-      if (prob_class == "0.06-0.10") {prob_perc = "5-10%"}
-      if (prob_class == "0.11-0.19") {prob_perc = "10-20%"}
-      if (prob_class == "0.20-1.0") {prob_perc = "20-100%"}
-      columns.push([prob_perc].concat(data));
-      groups[0].push(prob_perc);
+      columns.push([prob_class].concat(data));
+      groups[0].push(prob_class);
     });
 
     groups[0].sort(function(a, b){
@@ -408,8 +400,6 @@ module.exports = function(chartConfig, popatrisk_config, options)
   var gc = undefined;
   if(chartConfig.type == "bar")
   {
-    console.log('buildHazardChart.js');
-    console.log(chartConfig);
     //var groups = [[]];
     //var columns = [];
     if(options != undefined && options.groups != undefined && options.columns != undefined)

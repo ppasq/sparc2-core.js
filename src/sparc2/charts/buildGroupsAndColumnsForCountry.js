@@ -9,8 +9,20 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      columns.push([prob_class].concat(data));
-      groups[0].push(prob_class);
+      // add % symbol to column values
+      var prob_perc;
+      if (prob_class == "0.01-0.1") {prob_perc = "0-10%"}
+      if (prob_class == "0.1-0.2") {prob_perc = "10-20%"}
+      if (prob_class == "0.2-0.3") {prob_perc = "20-30%"}
+      if (prob_class == "0.3-0.4") {prob_perc = "30-40%"}
+      if (prob_class == "0.4-0.5") {prob_perc = "40-50%"}
+      if (prob_class == "0.5-0.6") {prob_perc = "50-60%"}
+      if (prob_class == "0.6-0.7") {prob_perc = "60-70%"}
+      if (prob_class == "0.7-0.8") {prob_perc = "70-80%"}
+      if (prob_class == "0.8-0.9") {prob_perc = "80-90%"}
+      if (prob_class == "0.9-1.0") {prob_perc = "90-100%"}
+      columns.push([prob_perc].concat(data));
+      groups[0].push(prob_perc);
     });
 
     groups[0].sort(function(a, b){
@@ -30,8 +42,16 @@ module.exports = function(chartConfig, popatrisk_config)
     $.each(popatrisk_config["data"]["summary"]["prob_class"], function(prob_class, value){
       var data = value["by_month"];
       //
-      columns.push([prob_class].concat(data));
-      groups[0].push(prob_class);
+      console.log('buildGroupsAndColumnsForCountry.js');
+      // console.log(value);
+      console.log(prob_class);
+      var prob_perc;
+      if (prob_class == "0.01-0.05") {prob_perc = "0-5%"}
+      if (prob_class == "0.05-0.10") {prob_perc = "5-10%"}
+      if (prob_class == "0.10-0.20") {prob_perc = "10-20%"}
+      if (prob_class == "0.20-1.0") {prob_perc = "20-100%"}
+      columns.push([prob_perc].concat(data));
+      groups[0].push(prob_perc);
     });
 
     groups[0].sort(function(a, b){
